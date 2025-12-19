@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { Cliente } from '@/types';
 
 export const generatePDF = (
@@ -105,21 +105,20 @@ export const generatePDF = (
 
   const totalNeto = items.reduce((acc, item) => acc + (item.cantidad * item.precioUnitario), 0);
 
-  (doc as any).autoTable({
-    startY: startY + 40,
-    head: [['PRODUCTO', 'DETALLE', 'FORMATO', 'CANT.', 'PRECIO', 'TOTAL']],
-    body: tableRows,
-    theme: 'grid',
-    headStyles: { fillColor: [46, 125, 50] }, // Verde Hidrocampo
-    styles: { fontSize: 9, cellPadding: 3 },
-    columnStyles: {
-      0: { cellWidth: 50 },
-      5: { halign: 'right' },
-      4: { halign: 'right' },
-      3: { halign: 'center' }
-    }
-  });
-
+  autoTable(doc, {
+  startY: startY + 40,
+  head: [['PRODUCTO', 'DETALLE', 'FORMATO', 'CANT.', 'PRECIO', 'TOTAL']],
+  body: tableRows,
+  theme: 'grid',
+  headStyles: { fillColor: [46, 125, 50] }, // Verde Hidrocampo
+  styles: { fontSize: 9, cellPadding: 3 },
+  columnStyles: {
+    0: { cellWidth: 50 },
+    5: { halign: 'right' },
+    4: { halign: 'right' },
+    3: { halign: 'center' }
+  }
+});
   // --- TOTALES ---
   const finalY = (doc as any).lastAutoTable.finalY + 10;
 
