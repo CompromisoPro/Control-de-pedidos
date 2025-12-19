@@ -33,8 +33,8 @@ export const generatePDF = (
   doc.text('NOTA DE PEDIDO', pageWidth - 14, 20, { align: 'right' });
   
   doc.setFontSize(10);
-  doc.text(`N° Pedido: ${pedidoId}`, pageWidth - 14, 26, { align: 'right' });
-  doc.text(`Fecha Emisión: ${new Date().toLocaleDateString()}`, pageWidth - 14, 31, { align: 'right' });
+  doc.text('N° Pedido: ' + pedidoId, pageWidth - 14, 26, { align: 'right' });
+  doc.text('Fecha Emisión: ' + new Date().toLocaleDateString(), pageWidth - 14, 31, { align: 'right' });
 
   // Línea divisora
   doc.setDrawColor(greenColor);
@@ -65,9 +65,9 @@ export const generatePDF = (
 
   doc.text(nombre.substring(0, 35), 18, startY + 6);
   doc.setFontSize(9);
-  doc.text(`RUT: ${rut}`, 18, startY + 11);
-  doc.text(`Dir: ${direccion.substring(0, 40)}`, 18, startY + 16);
-  doc.text(`Tel: ${contacto}`, 18, startY + 21);
+  doc.text('RUT: ' + rut, 18, startY + 11);
+  doc.text('Dir: ' + direccion.substring(0, 40), 18, startY + 16);
+  doc.text('Tel: ' + contacto, 18, startY + 21);
 
   // --- DATOS DE ENTREGA (Derecha) ---
   doc.setFillColor(250, 250, 250);
@@ -82,14 +82,14 @@ export const generatePDF = (
   doc.setTextColor(0);
   doc.setFont('helvetica', 'normal');
   
-  doc.text(`Fecha Despacho: ${fechaDespacho}`, pageWidth / 2 + 10, startY + 6);
-  doc.text(`Pago: ${cliente.formaPago || 'A Convenir'}`, pageWidth / 2 + 10, startY + 11);
+  doc.text('Fecha Despacho: ' + fechaDespacho, pageWidth / 2 + 10, startY + 6);
+  doc.text('Pago: ' + (cliente.formaPago || 'A Convenir'), pageWidth / 2 + 10, startY + 11);
   
   if (observaciones) {
     doc.setFontSize(9);
     doc.setTextColor(100);
     // Ajuste de texto largo
-    const obsLines = doc.splitTextToSize(`Nota: ${observaciones}`, (pageWidth / 2) - 25);
+    const obsLines = doc.splitTextToSize('Nota: ' + observaciones, (pageWidth / 2) - 25);
     doc.text(obsLines, pageWidth / 2 + 10, startY + 18);
   }
 
@@ -99,8 +99,8 @@ export const generatePDF = (
     item.detalle || '-',
     item.formato,
     item.cantidad,
-    `$${item.precioUnitario.toLocaleString('es-CL')}`,
-    `$${(item.cantidad * item.precioUnitario).toLocaleString('es-CL')}`
+    '$' + item.precioUnitario.toLocaleString('es-CL'),
+    '$' + (item.cantidad * item.precioUnitario).toLocaleString('es-CL')
   ]);
 
   const totalNeto = items.reduce((acc, item) => acc + (item.cantidad * item.precioUnitario), 0);
@@ -126,12 +126,12 @@ export const generatePDF = (
   doc.setFontSize(12);
   doc.setTextColor(0);
   doc.setFont('helvetica', 'bold');
-  doc.text(`TOTAL NETO: $${totalNeto.toLocaleString('es-CL')}`, pageWidth - 14, finalY, { align: 'right' });
+  doc.text('TOTAL NETO: $' + totalNeto.toLocaleString('es-CL'), pageWidth - 14, finalY, { align: 'right' });
 
   // Pie de página
   doc.setFontSize(8);
   doc.setTextColor(150);
   doc.text('Generado por Sistema Hidrocampo', pageWidth / 2, 280, { align: 'center' });
 
-  doc.save(`Pedido_${pedidoId}.pdf`);
+  doc.save('Pedido_' + pedidoId + '.pdf');
 };
