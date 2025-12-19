@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
 import { Cliente } from '@/types';
 
 export const generatePDF = (
