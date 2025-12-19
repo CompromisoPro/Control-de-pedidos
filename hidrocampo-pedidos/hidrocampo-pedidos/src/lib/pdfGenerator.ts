@@ -88,6 +88,7 @@ export const generatePDF = (
   if (observaciones) {
     doc.setFontSize(9);
     doc.setTextColor(100);
+    // Ajuste de texto largo
     const obsLines = doc.splitTextToSize(`Nota: ${observaciones}`, (pageWidth / 2) - 25);
     doc.text(obsLines, pageWidth / 2 + 10, startY + 18);
   }
@@ -134,4 +135,3 @@ export const generatePDF = (
 
   doc.save(`Pedido_${pedidoId}.pdf`);
 };
-}
