@@ -21,12 +21,18 @@ export default function ClienteSelector({
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Filtrar clientes por búsqueda
-  const filteredClientes = clientes.filter(
-    (cliente) =>
-      cliente.diccionarioCliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cliente.nombreOficial.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // --- CORRECCIÓN AQUÍ ---
+  // Agregamos ( || '') para evitar que explote si un campo viene vacío del Excel
+  const filteredClientes = clientes.filter((cliente) => {
+    // Protección contra datos nulos
+    if (!cliente) return false;
+
+    const term = searchTerm.toLowerCase();
+    const nombreDiccionario = (cliente.diccionarioCliente || '').toLowerCase();
+    const nombreOficial = (cliente.nombreOficial || '').toLowerCase();
+
+    return nombreDiccionario.includes(term) || nombreOficial.includes(term);
+  });
 
   // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
@@ -78,7 +84,7 @@ export default function ClienteSelector({
               </span>
             ) : selectedCliente ? (
               <span className="font-medium text-gray-800">
-                {selectedCliente.diccionarioCliente}
+                {selectedCliente.diccionarioCliente || 'Cliente seleccionado'}
               </span>
             ) : (
               <span className="text-gray-400">Seleccione un cliente...</span>
@@ -127,7 +133,9 @@ export default function ClienteSelector({
                       <div className="font-medium text-gray-800">
                         {cliente.diccionarioCliente}
                       </div>
-                      {cliente.nombreOficial && cliente.nombreOficial !== cliente.diccionarioCliente && (
+                      {/* Solo mostrar nombre oficial si existe y es diferente */}
+                      {cliente.nombreOficial && 
+                       cliente.nombreOficial !== cliente.diccionarioCliente && (
                         <div className="text-sm text-gray-500 mt-0.5">
                           {cliente.nombreOficial}
                         </div>
@@ -144,21 +152,22 @@ export default function ClienteSelector({
         {selectedCliente && (
           <div className="mt-6 p-4 bg-gradient-to-br from-hidrocampo-green/5 to-hidrocampo-yellow/5 rounded-xl border border-hidrocampo-green/10 animate-fade-in-up">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Nombre oficial */}
-              {selectedCliente.nombreOficial && (
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-white rounded-lg shadow-sm">
-                    <User className="w-4 h-4 text-hidrocampo-green" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Razón Social</p>
-                    <p className="font-medium text-gray-800">{selectedCliente.nombreOficial}</p>
-                    {selectedCliente.rut && (
-                      <p className="text-sm text-gray-500">RUT: {selectedCliente.rut}</p>
-                    )}
-                  </div>
+              
+              {/* Razón Social */}
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <User className="w-4 h-4 text-hidrocampo-green" />
                 </div>
-              )}
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Razón Social</p>
+                  <p className="font-medium text-gray-800">
+                    {selectedCliente.nombreOficial || selectedCliente.diccionarioCliente}
+                  </p>
+                  {selectedCliente.rut && (
+                    <p className="text-sm text-gray-500">RUT: {selectedCliente.rut}</p>
+                  )}
+                </div>
+              </div>
 
               {/* Dirección */}
               {selectedCliente.direccionEntrega && (
@@ -194,7 +203,7 @@ export default function ClienteSelector({
                 </div>
               )}
 
-              {/* Forma de pago */}
+              {/* Forma de Pago */}
               {selectedCliente.formaPago && (
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-white rounded-lg shadow-sm">
