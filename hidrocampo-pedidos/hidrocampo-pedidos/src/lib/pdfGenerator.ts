@@ -1,194 +1,137 @@
-'use client';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { Cliente } from '@/types';
 
-import { useState } from 'react';
-import { ShoppingCart, Send, CheckCircle, FileDown, RefreshCw } from 'lucide-react';
-import { Cliente, ProductoCliente } from '@/types';
-import { generatePDF } from '@/lib/pdfGenerator';
+export const generatePDF = (
+  pedidoId: string,
+  cliente: Cliente,
+  items: any[],
+  fechaDespacho: string,
+  observaciones: string
+) => {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.width;
 
-interface PedidoSummaryProps {
-  cliente: Cliente | null;
-  productos: ProductoCliente[];
-  cantidades: Map<string, number>;
-  onSubmit: (fecha: string, obs: string) => Promise<void>;
-  submitting: boolean;
-  submitResult: { success: boolean; pedidoId?: string; error?: string } | null;
-  onReset: () => void;
-}
+  // --- COLORES CORPORATIVOS ---
+  const greenColor = '#2E7D32'; // Verde Hidrocampo
+  const lightGreen = '#E8F5E9';
 
-export default function PedidoSummary({
-  cliente,
-  productos,
-  cantidades,
-  onSubmit,
-  submitting,
-  submitResult,
-  onReset,
-}: PedidoSummaryProps) {
-  const [fechaDespacho, setFechaDespacho] = useState('');
-  const [observaciones, setObservaciones] = useState('');
+  // --- ENCABEZADO ---
+  doc.setFontSize(22);
+  doc.setTextColor(greenColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text('HIDROCAMPO', 14, 20);
 
-  // Calcular totales
-  const totalItems = Array.from(cantidades.values()).reduce((a, b) => a + b, 0);
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Cultivando Sabor', 14, 25);
+
+  // Datos del documento (Derecha)
+  doc.setFontSize(16);
+  doc.setTextColor(0);
+  doc.text('NOTA DE PEDIDO', pageWidth - 14, 20, { align: 'right' });
   
-  const totalNeto = productos.reduce((acc, p) => {
-    const key = `${p.producto}-${p.formato}-${p.detalleProducto}`;
-    const cantidad = cantidades.get(key) || 0;
-    return acc + cantidad * p.precioNeto;
-  }, 0);
+  doc.setFontSize(10);
+  doc.text(`N° Pedido: ${pedidoId}`, pageWidth - 14, 26, { align: 'right' });
+  doc.text(`Fecha Emisión: ${new Date().toLocaleDateString()}`, pageWidth - 14, 31, { align: 'right' });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!fechaDespacho) {
-      alert('Por favor seleccione fecha de despacho');
-      return;
+  // Línea divisora
+  doc.setDrawColor(greenColor);
+  doc.setLineWidth(1);
+  doc.line(14, 35, pageWidth - 14, 35);
+
+  // --- DATOS DEL CLIENTE ---
+  const startY = 45;
+  
+  // Fondo verde claro para cliente
+  doc.setFillColor(lightGreen);
+  doc.rect(14, startY - 5, pageWidth / 2 - 20, 35, 'F');
+  
+  doc.setFontSize(11);
+  doc.setTextColor(greenColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text('CLIENTE:', 18, startY);
+
+  doc.setFontSize(10);
+  doc.setTextColor(0);
+  doc.setFont('helvetica', 'normal');
+  
+  // Usamos el nombre que esté disponible
+  const nombre = cliente.nombreOficial || cliente.diccionarioCliente;
+  const direccion = cliente.direccionEntrega || 'No registrada';
+  const rut = cliente.rut || 'No registrado';
+  const contacto = cliente.contacto || cliente.telefono || 'No registrado';
+
+  doc.text(nombre.substring(0, 35), 18, startY + 6);
+  doc.setFontSize(9);
+  doc.text(`RUT: ${rut}`, 18, startY + 11);
+  doc.text(`Dir: ${direccion.substring(0, 40)}`, 18, startY + 16);
+  doc.text(`Tel: ${contacto}`, 18, startY + 21);
+
+  // --- DATOS DE ENTREGA (Derecha) ---
+  doc.setFillColor(250, 250, 250);
+  doc.rect(pageWidth / 2 + 5, startY - 5, pageWidth / 2 - 19, 35, 'F');
+
+  doc.setFontSize(11);
+  doc.setTextColor(greenColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text('ENTREGA:', pageWidth / 2 + 10, startY);
+
+  doc.setFontSize(10);
+  doc.setTextColor(0);
+  doc.setFont('helvetica', 'normal');
+  
+  doc.text(`Fecha Despacho: ${fechaDespacho}`, pageWidth / 2 + 10, startY + 6);
+  doc.text(`Pago: ${cliente.formaPago || 'A Convenir'}`, pageWidth / 2 + 10, startY + 11);
+  
+  if (observaciones) {
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    const obsLines = doc.splitTextToSize(`Nota: ${observaciones}`, (pageWidth / 2) - 25);
+    doc.text(obsLines, pageWidth / 2 + 10, startY + 18);
+  }
+
+  // --- TABLA DE PRODUCTOS ---
+  const tableRows = items.map((item) => [
+    item.producto,
+    item.detalle || '-',
+    item.formato,
+    item.cantidad,
+    `$${item.precioUnitario.toLocaleString('es-CL')}`,
+    `$${(item.cantidad * item.precioUnitario).toLocaleString('es-CL')}`
+  ]);
+
+  const totalNeto = items.reduce((acc, item) => acc + (item.cantidad * item.precioUnitario), 0);
+
+  (doc as any).autoTable({
+    startY: startY + 40,
+    head: [['PRODUCTO', 'DETALLE', 'FORMATO', 'CANT.', 'PRECIO', 'TOTAL']],
+    body: tableRows,
+    theme: 'grid',
+    headStyles: { fillColor: [46, 125, 50] }, // Verde Hidrocampo
+    styles: { fontSize: 9, cellPadding: 3 },
+    columnStyles: {
+      0: { cellWidth: 50 },
+      5: { halign: 'right' },
+      4: { halign: 'right' },
+      3: { halign: 'center' }
     }
-    onSubmit(fechaDespacho, observaciones);
-  };
+  });
 
-  const handleDownloadPDF = () => {
-    if (!cliente || !submitResult?.pedidoId) return;
+  // --- TOTALES ---
+  const finalY = (doc as any).lastAutoTable.finalY + 10;
 
-    // Preparar items para el PDF
-    const itemsParaPDF = productos
-      .filter((p) => {
-        const key = `${p.producto}-${p.formato}-${p.detalleProducto}`;
-        return (cantidades.get(key) || 0) > 0;
-      })
-      .map((p) => {
-        const key = `${p.producto}-${p.formato}-${p.detalleProducto}`;
-        return {
-          producto: p.producto,
-          formato: p.formato,
-          detalle: p.detalleProducto,
-          cantidad: cantidades.get(key) || 0,
-          precioUnitario: p.precioNeto,
-        };
-      });
+  doc.setFontSize(12);
+  doc.setTextColor(0);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`TOTAL NETO: $${totalNeto.toLocaleString('es-CL')}`, pageWidth - 14, finalY, { align: 'right' });
 
-    generatePDF(
-      submitResult.pedidoId,
-      cliente,
-      itemsParaPDF,
-      fechaDespacho,
-      observaciones
-    );
-  };
+  // Pie de página
+  doc.setFontSize(8);
+  doc.setTextColor(150);
+  doc.text('Generado por Sistema Hidrocampo', pageWidth / 2, 280, { align: 'center' });
 
-  // --- ESTADO: PEDIDO EXITOSO ---
-  if (submitResult?.success) {
-    return (
-      <div className="bg-white rounded-2xl shadow-xl p-8 text-center animate-fade-in border-2 border-green-100">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle className="w-10 h-10 text-green-600" />
-        </div>
-        
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">¡Pedido Confirmado!</h3>
-        <p className="text-gray-500 mb-6">El pedido ha sido registrado correctamente.</p>
-
-        <div className="bg-gray-50 rounded-xl p-4 mb-8 border border-gray-200">
-          <p className="text-xs text-gray-400 uppercase tracking-wide">Número de Pedido</p>
-          <p className="text-xl font-mono font-bold text-gray-900 mt-1">{submitResult.pedidoId}</p>
-        </div>
-
-        <div className="space-y-3">
-          <button
-            onClick={handleDownloadPDF}
-            className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg"
-          >
-            <FileDown className="w-5 h-5" />
-            Descargar PDF
-          </button>
-
-          <button
-            onClick={onReset}
-            className="w-full py-3 text-green-700 font-medium hover:bg-green-50 rounded-xl transition-colors flex items-center justify-center gap-2"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Crear Nuevo Pedido
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // --- ESTADO: SIN CLIENTE ---
-  if (!cliente) {
-    return (
-      <div className="bg-white rounded-2xl shadow-lg p-8 text-center border border-gray-100 h-full flex flex-col justify-center items-center opacity-60">
-        <ShoppingCart className="w-12 h-12 text-gray-300 mb-3" />
-        <p className="text-gray-400">Seleccione un cliente para comenzar</p>
-      </div>
-    );
-  }
-
-  // --- ESTADO: RESUMEN NORMAL ---
-  return (
-    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden sticky top-6">
-      <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
-        <h3 className="font-bold text-gray-800 flex items-center gap-2">
-          <ShoppingCart className="w-5 h-5 text-green-600" />
-          Resumen del Pedido
-        </h3>
-      </div>
-
-      <div className="p-6 space-y-6">
-        <div className="flex justify-between items-center py-4 border-b border-gray-100">
-          <div>
-            <p className="text-sm text-gray-500">Items</p>
-            <p className="text-2xl font-bold text-gray-800">{totalItems}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-500">Total Neto</p>
-            <p className="text-2xl font-bold text-green-600">${totalNeto.toLocaleString('es-CL')}</p>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Fecha de Despacho *</label>
-            <input
-              type="date"
-              required
-              min={new Date().toISOString().split('T')[0]}
-              value={fechaDespacho}
-              onChange={(e) => setFechaDespacho(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-green-500 focus:ring-1 focus:ring-green-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Observaciones</label>
-            <textarea
-              rows={3}
-              value={observaciones}
-              onChange={(e) => setObservaciones(e.target.value)}
-              placeholder="Ej: Entregar por puerta trasera..."
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-green-500 focus:ring-1 focus:ring-green-500 text-sm"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting || totalItems === 0}
-            className={`
-              w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2
-              ${submitting || totalItems === 0 ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-green-600 hover:bg-green-700'}
-            `}
-          >
-            {submitting ? (
-              <>
-                <RefreshCw className="w-5 h-5 animate-spin" />
-                Procesando...
-              </>
-            ) : (
-              <>
-                <Send className="w-5 h-5" />
-                Confirmar Pedido
-              </>
-            )}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+  doc.save(`Pedido_${pedidoId}.pdf`);
+};
 }
