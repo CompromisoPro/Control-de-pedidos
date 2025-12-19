@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getClientes } from '@/lib/sheets';
 
+// 👇 AQUÍ AGREGUÉ LA LÍNEA MÁGICA 👇
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const clientes = await getClientes();
