@@ -9,8 +9,10 @@ import {
   AlertCircle,
   Loader2,
   Printer,
+  FileDown, // Nuevo icono
 } from 'lucide-react';
 import { Cliente, ProductoCliente } from '@/types';
+import { generatePDF } from '@/lib/pdfGenerator'; // Importamos el generador
 
 interface PedidoSummaryProps {
   cliente: Cliente | null;
@@ -86,6 +88,28 @@ export default function PedidoSummary({
   const canSubmit =
     cliente && itemsSeleccionados.length > 0 && fechaDespacho && !submitting;
 
+  // --- NUEVA FUNCIÓN PARA DESCARGAR PDF ---
+  const handleDownloadPDF = () => {
+    if (!cliente || !submitResult?.pedidoId) return;
+
+    // Convertir tus itemsSeleccionados al formato que necesita el generador
+    const itemsParaPDF = itemsSeleccionados.map((item) => ({
+      producto: item.producto.producto,
+      formato: item.producto.formato,
+      detalle: item.producto.detalleProducto,
+      cantidad: item.cantidad,
+      precioUnitario: item.producto.precioNeto,
+    }));
+
+    generatePDF(
+      submitResult.pedidoId,
+      cliente,
+      itemsParaPDF,
+      fechaDespacho,
+      observaciones
+    );
+  };
+
   // Si el pedido fue exitoso, mostrar confirmación
   if (submitResult?.success) {
     return (
@@ -111,22 +135,34 @@ export default function PedidoSummary({
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="flex flex-col gap-3 justify-center">
+            {/* Botón Principal: DESCARGAR PDF */}
             <button
               type="button"
-              onClick={onReset}
-              className="px-6 py-3 bg-hidrocampo-green text-white font-semibold rounded-xl hover:bg-hidrocampo-green-dark transition-colors"
+              onClick={handleDownloadPDF}
+              className="w-full px-6 py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg"
             >
-              Crear Nuevo Pedido
+              <FileDown className="w-5 h-5" />
+              Descargar Nota de Pedido (PDF)
             </button>
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-            >
-              <Printer className="w-5 h-5" />
-              Imprimir
-            </button>
+            
+            <div className="flex gap-3 mt-2">
+              <button
+                type="button"
+                onClick={onReset}
+                className="flex-1 px-4 py-3 bg-hidrocampo-green text-white font-semibold rounded-xl hover:bg-hidrocampo-green-dark transition-colors"
+              >
+                Nuevo Pedido
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-4 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                title="Imprimir pantalla simple"
+              >
+                <Printer className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
