@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { crearPedido, getPedidos, getClienteByDiccionario } from '@/lib/sheets';
 import { ItemPedido } from '@/types';
 
+// 👇 AQUÍ AGREGUÉ LA LÍNEA MÁGICA 👇
+export const dynamic = 'force-dynamic';
+
 // GET - Obtener todos los pedidos
 export async function GET(request: NextRequest) {
   try {
