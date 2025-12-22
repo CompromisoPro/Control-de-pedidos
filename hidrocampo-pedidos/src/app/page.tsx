@@ -16,7 +16,6 @@ export default function Home() {
   // Estados
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loadingClientes, setLoadingClientes] = useState(true);
-  const [debugError, setDebugError] = useState<string>(''); // Nuevo estado para capturar errores
 
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [productos, setProductos] = useState<ProductoCliente[]>([]);
@@ -35,7 +34,6 @@ export default function Home() {
   useEffect(() => {
     async function fetchClientes() {
       try {
-        console.log('Iniciando carga de clientes...'); // Log en consola
         const response = await fetch('/api/clientes');
         
         if (!response.ok) {
@@ -43,16 +41,12 @@ export default function Home() {
         }
 
         const data = await response.json();
-        console.log('Datos recibidos:', data); // Log en consola
 
         if (data.success) {
           setClientes(data.data);
-        } else {
-          setDebugError(data.error || 'La API devolvió success: false');
         }
       } catch (error: any) {
         console.error('Error fetching clientes:', error);
-        setDebugError(error.message || 'Error desconocido al cargar');
       } finally {
         setLoadingClientes(false);
       }
@@ -186,25 +180,6 @@ export default function Home() {
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* --- EL CHIVATO DIAGNÓSTICO --- */}
-        <div className="bg-red-50 p-4 mb-6 rounded-lg border-2 border-red-200 text-sm font-mono text-red-900 shadow-sm">
-           <h3 className="font-bold border-b border-red-200 pb-2 mb-2">🔧 MODO DIAGNÓSTICO (CHIVATO)</h3>
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <div>
-               <p><strong>ESTADO CARGA:</strong> {loadingClientes ? '⏳ Cargando...' : '✅ Terminado'}</p>
-               <p><strong>CANTIDAD CLIENTES:</strong> {clientes.length}</p>
-               <p><strong>ERROR API:</strong> {debugError || 'Ninguno'}</p>
-             </div>
-             <div>
-               <p><strong>PRIMER CLIENTE (DATA):</strong></p>
-               <pre className="text-xs bg-white p-2 rounded border border-red-100 overflow-auto max-h-24">
-                 {clientes.length > 0 ? JSON.stringify(clientes[0], null, 2) : 'Sin datos'}
-               </pre>
-             </div>
-           </div>
-        </div>
-        {/* --- FIN DEL CHIVATO --- */}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Columna izquierda - Cliente y Resumen */}
