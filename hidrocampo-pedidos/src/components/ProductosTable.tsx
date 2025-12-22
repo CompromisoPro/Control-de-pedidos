@@ -123,11 +123,11 @@ export default function ProductosTable({
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-fade-in-up">
       {/* Header */}
-      <div className="bg-gradient-to-r from-hidrocampo-green to-hidrocampo-green-light px-6 py-4">
+      <div className="bg-gradient-to-r from-hidrocampo-green to-hidrocampo-green-light px-4 sm:px-6 py-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h2 className="text-white font-display font-semibold text-lg flex items-center gap-2">
             <Package className="w-5 h-5" />
-            Productos del Cliente
+            Productos
             <span className="ml-2 px-2 py-0.5 bg-white/20 rounded-full text-sm">
               {productos.length}
             </span>
@@ -136,7 +136,7 @@ export default function ProductosTable({
           {totales.itemsConCantidad > 0 && (
             <div className="flex items-center gap-2 text-white/90 text-sm">
               <span className="px-3 py-1 bg-hidrocampo-yellow text-hidrocampo-green-dark font-bold rounded-full">
-                {totales.itemsConCantidad} productos seleccionados
+                {totales.itemsConCantidad} seleccionados
               </span>
             </div>
           )}
@@ -144,7 +144,7 @@ export default function ProductosTable({
       </div>
 
       {/* Filtros */}
-      <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+      <div className="px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-100">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Buscador */}
           <div className="relative flex-1">
@@ -163,7 +163,7 @@ export default function ProductosTable({
             type="button"
             onClick={() => setShowOnlyWithQuantity(!showOnlyWithQuantity)}
             className={`
-              flex items-center gap-2 px-4 py-2.5 rounded-lg border transition-all
+              flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border transition-all
               ${
                 showOnlyWithQuantity
                   ? 'bg-hidrocampo-green text-white border-hidrocampo-green'
@@ -172,13 +172,71 @@ export default function ProductosTable({
             `}
           >
             <Filter className="w-4 h-4" />
-            <span className="whitespace-nowrap">Solo seleccionados</span>
+            <span className="whitespace-nowrap text-sm">Solo seleccionados</span>
           </button>
         </div>
       </div>
 
-      {/* Tabla */}
-      <div className="overflow-x-auto">
+      {/* Vista Móvil - Tarjetas */}
+      <div className="block sm:hidden">
+        <div className="divide-y divide-gray-100">
+          {filteredProductos.map((producto) => {
+            const key = getProductoKey(producto);
+            const cantidad = cantidades.get(key) || 0;
+            const total = cantidad * producto.precioNeto;
+            const hasQuantity = cantidad > 0;
+
+            return (
+              <div
+                key={key}
+                className={`p-4 ${hasQuantity ? 'bg-green-50' : 'bg-white'}`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900">{producto.producto}</h3>
+                    <p className="text-sm text-gray-500">
+                      {producto.formato} {producto.detalleProducto && `• ${producto.detalleProducto}`}
+                    </p>
+                  </div>
+                  <p className="font-mono font-semibold text-gray-800">
+                    {formatCLP(producto.precioNeto)}
+                  </p>
+                </div>
+                
+                <div className="flex items-center justify-between mt-3">
+                  <div className="flex items-center gap-3">
+                    <label className="text-sm text-gray-600">Cantidad:</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={cantidad || ''}
+                      onChange={(e) => handleCantidadChange(producto, e.target.value)}
+                      placeholder="0"
+                      className={`
+                        w-20 px-3 py-2 text-center font-medium rounded-lg border-2
+                        focus:outline-none transition-all
+                        ${
+                          hasQuantity
+                            ? 'border-hidrocampo-green bg-white text-hidrocampo-green-dark'
+                            : 'border-gray-200 bg-white text-gray-700'
+                        }
+                      `}
+                    />
+                  </div>
+                  {hasQuantity && (
+                    <p className="font-mono font-bold text-hidrocampo-green">
+                      {formatCLP(total)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Vista Desktop - Tabla */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
@@ -192,10 +250,10 @@ export default function ProductosTable({
                 Detalle
               </th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Precio Neto
+                Precio
               </th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">
-                Cantidad
+              <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">
+                Cant.
               </th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Total
@@ -212,7 +270,7 @@ export default function ProductosTable({
               return (
                 <tr
                   key={key}
-                  className={`product-row ${hasQuantity ? 'has-quantity' : ''}`}
+                  className={`transition-colors ${hasQuantity ? 'bg-green-50' : 'hover:bg-gray-50'}`}
                 >
                   <td className="px-4 py-3">
                     <span className="font-medium text-gray-800">{producto.producto}</span>
@@ -238,11 +296,11 @@ export default function ProductosTable({
                       onChange={(e) => handleCantidadChange(producto, e.target.value)}
                       placeholder="0"
                       className={`
-                        quantity-input w-full px-3 py-2 text-center font-medium rounded-lg border-2
+                        w-full px-3 py-2 text-center font-medium rounded-lg border-2
                         focus:outline-none transition-all
                         ${
                           hasQuantity
-                            ? 'border-hidrocampo-green bg-hidrocampo-green/5 text-hidrocampo-green-dark'
+                            ? 'border-hidrocampo-green bg-white text-hidrocampo-green-dark'
                             : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                         }
                       `}
@@ -262,19 +320,19 @@ export default function ProductosTable({
             })}
           </tbody>
         </table>
-
-        {filteredProductos.length === 0 && (
-          <div className="px-6 py-12 text-center text-gray-500">
-            No se encontraron productos con ese criterio
-          </div>
-        )}
       </div>
+
+      {filteredProductos.length === 0 && (
+        <div className="px-6 py-12 text-center text-gray-500">
+          No se encontraron productos con ese criterio
+        </div>
+      )}
 
       {/* Resumen de totales */}
       {totales.itemsConCantidad > 0 && (
-        <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-hidrocampo-green/5 border-t border-gray-200">
+        <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-hidrocampo-green/5 border-t border-gray-200">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4">
-            <div className="flex items-center justify-between sm:justify-end gap-8">
+            <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-8">
               <div className="text-right">
                 <p className="text-xs text-gray-500 uppercase">Subtotal</p>
                 <p className="font-mono font-semibold text-gray-700">
@@ -282,7 +340,7 @@ export default function ProductosTable({
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-500 uppercase">IVA (19%)</p>
+                <p className="text-xs text-gray-500 uppercase">IVA 19%</p>
                 <p className="font-mono font-semibold text-gray-700">{formatCLP(totales.iva)}</p>
               </div>
               <div className="text-right">
