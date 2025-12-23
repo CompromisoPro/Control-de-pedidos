@@ -1,6 +1,6 @@
 'use client';
 
-import { Leaf } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Header() {
   return (
@@ -8,17 +8,16 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center">
             <div className="bg-white rounded-lg p-2 shadow-md">
-              <Leaf className="w-8 h-8 text-hidrocampo-green" strokeWidth={2.5} />
-            </div>
-            <div>
-              <h1 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                HIDROCAMPO
-              </h1>
-              <p className="text-hidrocampo-yellow text-xs sm:text-sm font-medium -mt-1">
-                CULTIVANDO SABOR
-              </p>
+              <Image
+                src="/hidrocampo.jpg"
+                alt="Hidrocampo"
+                width={160}
+                height={50}
+                className="h-8 sm:h-10 w-auto"
+                priority
+              />
             </div>
           </div>
 
