@@ -80,8 +80,24 @@ export default function ProductosTable({
     return { subtotal, iva, total, itemsConCantidad };
   }, [productos, cantidades]);
 
+  // Verificar si el formato es Granel Kg (permite decimales en múltiplos de 0.25)
+  const isGranelKg = (formato: string) => {
+    return formato.toLowerCase().includes('granel') && formato.toLowerCase().includes('kg');
+  };
+
   const handleCantidadChange = (producto: ProductoCliente, value: string) => {
-    const cantidad = parseInt(value) || 0;
+    let cantidad: number;
+    
+    if (isGranelKg(producto.formato)) {
+      // Para Granel Kg: permitir decimales en múltiplos de 0.25
+      cantidad = parseFloat(value) || 0;
+      // Redondear al múltiplo de 0.25 más cercano
+      cantidad = Math.round(cantidad * 4) / 4;
+    } else {
+      // Para otros formatos: solo números enteros
+      cantidad = parseInt(value) || 0;
+    }
+    
     const key = getProductoKey(producto);
     onCantidadChange(key, Math.max(0, cantidad));
   };
@@ -209,6 +225,7 @@ export default function ProductosTable({
                     <input
                       type="number"
                       min="0"
+                      step={isGranelKg(producto.formato) ? "0.25" : "1"}
                       value={cantidad || ''}
                       onChange={(e) => handleCantidadChange(producto, e.target.value)}
                       placeholder="0"
@@ -292,6 +309,7 @@ export default function ProductosTable({
                     <input
                       type="number"
                       min="0"
+                      step={isGranelKg(producto.formato) ? "0.25" : "1"}
                       value={cantidad || ''}
                       onChange={(e) => handleCantidadChange(producto, e.target.value)}
                       placeholder="0"
